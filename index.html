@@ -164,14 +164,21 @@
         <a-entity id="persistent-models"></a-entity>
         
         <!-- Pattern işaretçisi - Pizza modeli -->
-        <a-marker type="pattern" url="assets/pattern-marker.patt" id="pattern-marker" smooth="true" smoothCount="5" registerevents>
+        <a-marker 
+            type="pattern" 
+            url="assets/pattern-marker.patt" 
+            id="pizza-marker" 
+            smooth="true" 
+            smoothCount="5" 
+            registerevents>
+            
             <a-entity
                 id="pizza-entity"
-                position="0 0 0"
-                rotation="0 0 0"
-                scale="0.5 0.5 0.5"
                 gltf-model="#pizza-model"
                 gesture-handler
+                scale="0.5 0.5 0.5"
+                position="0 0 0"
+                rotation="0 0 0"
                 data-model-name="Pizza"
                 class="model-entity"
                 visible="false">
@@ -310,9 +317,7 @@
             init: function () {
                 const marker = this.el;
                 const modelEntity = marker.querySelector('.model-entity');
-                const modelId = modelEntity.id;
                 const modelName = modelEntity.getAttribute('data-model-name');
-                const modelSrc = modelEntity.getAttribute('gltf-model');
                 
                 // Model yüklendiğinde
                 modelEntity.addEventListener('model-loaded', function() {
@@ -333,75 +338,16 @@
                     document.getElementById('marker-info').style.display = 'block';
                     document.getElementById('active-model').textContent = modelName;
                     
-                    // Eğer model daha önce yerleştirilmediyse
-                    if (!modelPlaced) {
-                        // İşaretçinin dünya koordinatlarını al
-                        const markerWorldPosition = new THREE.Vector3();
-                        const markerWorldRotation = new THREE.Quaternion();
-                        
-                        marker.object3D.getWorldPosition(markerWorldPosition);
-                        marker.object3D.getWorldQuaternion(markerWorldRotation);
-                        
-                        // Kalıcı model oluştur
-                        const persistentModelsContainer = document.getElementById('persistent-models');
-                        
-                        const persistentModel = document.createElement('a-entity');
-                        persistentModel.id = `persistent-${modelId}`;
-                        persistentModel.setAttribute('gltf-model', modelSrc);
-                        persistentModel.setAttribute('scale', '0.5 0.5 0.5');
-                        persistentModel.setAttribute('data-model-name', modelName);
-                        persistentModel.setAttribute('gesture-handler', '');
-                        persistentModel.setAttribute('visible', 'true');
-                        
-                        // Pozisyon ve rotasyonu ayarla
-                        persistentModel.object3D.position.copy(markerWorldPosition);
-                        persistentModel.object3D.quaternion.copy(markerWorldRotation);
-                        
-                        persistentModelsContainer.appendChild(persistentModel);
-                        
-                        // Model yüklendiğinde
-                        persistentModel.addEventListener('model-loaded', function() {
-                            console.log('Kalıcı model yüklendi:', modelName);
-                            // Modeli görünür yap
-                            persistentModel.setAttribute('visible', 'true');
-                        });
-                        
-                        // Model yerleştirildi olarak işaretle
-                        modelPlaced = true;
-                    } else {
-                        // Kalıcı modeli göster
-                        const persistentModelId = `persistent-${modelId}`;
-                        const persistentModel = document.getElementById(persistentModelId);
-                        
-                        if (persistentModel) {
-                            // İşaretçinin dünya koordinatlarını al
-                            const markerWorldPosition = new THREE.Vector3();
-                            const markerWorldRotation = new THREE.Quaternion();
-                            
-                            marker.object3D.getWorldPosition(markerWorldPosition);
-                            marker.object3D.getWorldQuaternion(markerWorldRotation);
-                            
-                            // Pozisyon ve rotasyonu güncelle
-                            persistentModel.object3D.position.copy(markerWorldPosition);
-                            persistentModel.object3D.quaternion.copy(markerWorldRotation);
-                            
-                            // Kalıcı modeli görünür yap
-                            persistentModel.setAttribute('visible', 'true');
-                        }
-                    }
+                    // Modeli görünür yap
+                    modelEntity.setAttribute('visible', 'true');
                 });
                 
                 // İşaretçi kaybolduğunda
                 marker.addEventListener('markerLost', function () {
                     console.log('İşaretçi kayboldu:', marker.id);
                     
-                    // Kalıcı modeli gizle
-                    const persistentModelId = `persistent-${modelId}`;
-                    const persistentModel = document.getElementById(persistentModelId);
-                    
-                    if (persistentModel) {
-                        persistentModel.setAttribute('visible', 'false');
-                    }
+                    // Modeli gizle
+                    modelEntity.setAttribute('visible', 'false');
                 });
             }
         });
