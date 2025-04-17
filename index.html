@@ -161,7 +161,7 @@
         <!-- Asset Management System -->
         <a-assets>
             <!-- Modeller -->
-            <a-asset-item id="meat-model" src="assets/meat.glb" crossorigin="anonymous"></a-asset-item>
+            <a-asset-item id="pizza-model" src="assets/pizza.glb" crossorigin="anonymous"></a-asset-item>
         </a-assets>
         
         <!-- Kamera -->
@@ -170,16 +170,16 @@
         <!-- Kalıcı modeller için konteyner -->
         <a-entity id="persistent-models"></a-entity>
         
-        <!-- Pattern işaretçisi - Meat modeli -->
+        <!-- Pattern işaretçisi - Pizza modeli -->
         <a-marker type="pattern" url="assets/pattern-marker.patt" id="pattern-marker" smooth="true" smoothCount="5" registerevents>
             <a-entity
-                id="meat-entity"
+                id="pizza-entity"
                 position="0 0 0"
                 rotation="0 0 0"
                 scale="0.5 0.5 0.5"
-                gltf-model="#meat-model"
-                animation="property: rotation; to: 360 0 0; loop: true; dur: 10000; easing: linear"
-                data-model-name="Meat"
+                gltf-model="#pizza-model"
+                touch-controls
+                data-model-name="Pizza"
                 class="model-entity"
                 visible="false">
             </a-entity>
@@ -198,6 +198,119 @@
         // Global değişkenler
         let activeModel = null;
         let modelPlaced = false; // Model yerleştirildi mi kontrolü
+        
+        // Parmak kontrolleri için komponent
+        AFRAME.registerComponent('touch-controls', {
+            schema: {
+                enabled: {default: true}
+            },
+            init: function() {
+                if (!this.el.getAttribute('touch-controls-registered')) {
+                    // Başlangıç değerlerini al
+                    const currentScale = this.el.getAttribute('scale');
+                    const currentRotation = this.el.getAttribute('rotation');
+                    
+                    this.scale = currentScale.x || 0.5;
+                    this.rotation = { 
+                        x: currentRotation ? currentRotation.x : 0, 
+                        y: currentRotation ? currentRotation.y : 0, 
+                        z: currentRotation ? currentRotation.z : 0 
+                    };
+                    
+                    // Referansı sakla
+                    this.entityEl = this.el;
+                    
+                    // Touch olaylarını dinle
+                    this.onTouchStartBound = this.onTouchStart.bind(this);
+                    this.onTouchMoveBound = this.onTouchMove.bind(this);
+                    this.onTouchEndBound = this.onTouchEnd.bind(this);
+                    
+                    document.addEventListener('touchstart', this.onTouchStartBound);
+                    document.addEventListener('touchmove', this.onTouchMoveBound);
+                    document.addEventListener('touchend', this.onTouchEndBound);
+                    
+                    this.el.setAttribute('touch-controls-registered', 'true');
+                    
+                    console.log('Touch controls başlatıldı:', this.el.id);
+                }
+            },
+            
+            remove: function() {
+                // Bileşen kaldırıldığında olay dinleyicilerini temizle
+                document.removeEventListener('touchstart', this.onTouchStartBound);
+                document.removeEventListener('touchmove', this.onTouchMoveBound);
+                document.removeEventListener('touchend', this.onTouchEndBound);
+                console.log('Touch controls kaldırıldı:', this.el.id);
+            },
+            
+            onTouchStart: function(event) {
+                // Sadece model görünürse işlem yap
+                if (!this.el.getAttribute('visible')) return;
+                
+                this.touchStartX = event.touches[0].clientX;
+                this.touchStartY = event.touches[0].clientY;
+                this.isTouching = true;
+                
+                // İki parmak varsa başlangıç mesafesini kaydet
+                if (event.touches.length === 2) {
+                    this.initialDistance = this.getDistance(event.touches[0], event.touches[1]);
+                    console.log('İki parmak başlangıç mesafesi:', this.initialDistance);
+                }
+            },
+            
+            onTouchMove: function(event) {
+                // Sadece model görünürse işlem yap
+                if (!this.el.getAttribute('visible')) return;
+                if (!this.isTouching) return;
+                
+                event.preventDefault();
+                
+                // Tek parmak ile döndürme
+                if (event.touches.length === 1) {
+                    const deltaX = event.touches[0].clientX - this.touchStartX;
+                    
+                    // Sadece Y ekseni etrafında döndürme (sağ-sol)
+                    this.rotation.y += deltaX * 2.0;
+                    
+                    this.touchStartX = event.touches[0].clientX;
+                    this.touchStartY = event.touches[0].clientY;
+                    
+                    console.log('Döndürme:', this.rotation);
+                }
+                // İki parmak ile boyutlandırma
+                else if (event.touches.length === 2) {
+                    const currentDistance = this.getDistance(event.touches[0], event.touches[1]);
+                    const scaleFactor = currentDistance / this.initialDistance;
+                    
+                    // Boyutu güncelle (0.1 ile 1.0 arasında sınırla)
+                    const newScale = this.scale * scaleFactor;
+                    this.scale = Math.max(0.1, Math.min(1.0, newScale));
+                    
+                    this.initialDistance = currentDistance;
+                    
+                    console.log('Boyutlandırma:', this.scale);
+                }
+                
+                // Değişiklikleri uygula
+                this.updateTransform();
+            },
+            
+            onTouchEnd: function() {
+                this.isTouching = false;
+            },
+            
+            getDistance: function(touch1, touch2) {
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            },
+            
+            updateTransform: function() {
+                // Rotasyon ve ölçeği güncelle
+                this.el.setAttribute('rotation', `${this.rotation.x} ${this.rotation.y} ${this.rotation.z}`);
+                this.el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+            }
+        });
         
         // İşaretçi olaylarını kaydetmek için komponent
         AFRAME.registerComponent('registerevents', {
@@ -244,7 +357,7 @@
                         persistentModel.setAttribute('gltf-model', modelSrc);
                         persistentModel.setAttribute('scale', '0.5 0.5 0.5');
                         persistentModel.setAttribute('data-model-name', modelName);
-                        persistentModel.setAttribute('animation', 'property: rotation; to: 360 0 0; loop: true; dur: 10000; easing: linear');
+                        persistentModel.setAttribute('touch-controls', '');
                         persistentModel.setAttribute('visible', 'true');
                         
                         // Pozisyon ve rotasyonu ayarla
