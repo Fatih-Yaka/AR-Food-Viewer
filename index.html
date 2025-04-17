@@ -145,13 +145,6 @@
         Aktif model: <span id="active-model">Yok</span>
     </div>
 
-    <div id="model-controls">
-        <button class="control-button" id="rotate-left">↶</button>
-        <button class="control-button" id="rotate-right">↷</button>
-        <button class="control-button" id="scale-up">+</button>
-        <button class="control-button" id="scale-down">-</button>
-    </div>
-
     <a-scene 
         embedded
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; cameraParametersUrl: https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/camera_para.dat;"
@@ -178,7 +171,7 @@
                 rotation="0 0 0"
                 scale="0.5 0.5 0.5"
                 gltf-model="#pizza-model"
-                touch-controls
+                gesture-handler
                 data-model-name="Pizza"
                 class="model-entity"
                 visible="false">
@@ -199,13 +192,13 @@
         let activeModel = null;
         let modelPlaced = false; // Model yerleştirildi mi kontrolü
         
-        // Parmak kontrolleri için komponent
-        AFRAME.registerComponent('touch-controls', {
+        // Gesture handler bileşeni
+        AFRAME.registerComponent('gesture-handler', {
             schema: {
                 enabled: {default: true}
             },
             init: function() {
-                if (!this.el.getAttribute('touch-controls-registered')) {
+                if (!this.el.getAttribute('gesture-handler-registered')) {
                     // Başlangıç değerlerini al
                     const currentScale = this.el.getAttribute('scale');
                     const currentRotation = this.el.getAttribute('rotation');
@@ -229,9 +222,9 @@
                     document.addEventListener('touchmove', this.onTouchMoveBound);
                     document.addEventListener('touchend', this.onTouchEndBound);
                     
-                    this.el.setAttribute('touch-controls-registered', 'true');
+                    this.el.setAttribute('gesture-handler-registered', 'true');
                     
-                    console.log('Touch controls başlatıldı:', this.el.id);
+                    console.log('Gesture handler başlatıldı:', this.el.id);
                 }
             },
             
@@ -240,7 +233,7 @@
                 document.removeEventListener('touchstart', this.onTouchStartBound);
                 document.removeEventListener('touchmove', this.onTouchMoveBound);
                 document.removeEventListener('touchend', this.onTouchEndBound);
-                console.log('Touch controls kaldırıldı:', this.el.id);
+                console.log('Gesture handler kaldırıldı:', this.el.id);
             },
             
             onTouchStart: function(event) {
@@ -357,7 +350,7 @@
                         persistentModel.setAttribute('gltf-model', modelSrc);
                         persistentModel.setAttribute('scale', '0.5 0.5 0.5');
                         persistentModel.setAttribute('data-model-name', modelName);
-                        persistentModel.setAttribute('touch-controls', '');
+                        persistentModel.setAttribute('gesture-handler', '');
                         persistentModel.setAttribute('visible', 'true');
                         
                         // Pozisyon ve rotasyonu ayarla
